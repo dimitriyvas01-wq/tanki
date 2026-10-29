@@ -92,17 +92,60 @@ canvas {
   color: #c9d7b4;
 }
 
+.mods {
+  margin: -0.4rem 0 0;
+  color: #d6ef9a;
+  font-size: 0.85rem;
+}
+
 .hint {
   margin: 0;
   color: #b7c7a4;
   font-size: 0.875rem;
 }
 
+.panel h2 {
+  margin: 0 0 0.45rem;
+  color: #d6ef9a;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.choice button {
+  height: auto;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.choice button.active {
+  color: #172214;
+  background: #d6ef9a;
+  border-color: #d6ef9a;
+}
+
+.choice button:disabled {
+  opacity: 0.45;
+}
+
 .controls {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 1rem 1.5rem;
+}
+
+.pad,
+.actions {
+  flex-shrink: 0;
 }
 
 .pad {

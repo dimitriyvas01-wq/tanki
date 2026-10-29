@@ -1,4 +1,21 @@
-import { COLS, FIELD_H, FIELD_W, ROWS, TILE, createGame, update } from "./engine.js";
+import {
+  COLS,
+  FIELD_H,
+  FIELD_W,
+  MODIFIERS,
+  ROWS,
+  TILE,
+  UPGRADES,
+  WEAPON_ORDER,
+  WEAPONS,
+  buyUpgrade,
+  buyWeapon,
+  createGame,
+  normalizeLoadout,
+  selectWeapon,
+  syncLoadout,
+  update,
+} from "./engine.js";
 
 const KEY_DIR = {
   ArrowUp: "up",
@@ -17,6 +34,11 @@ const scoreNode = document.querySelector("#score");
 const waveNode = document.querySelector("#wave");
 const livesNode = document.querySelector("#lives");
 const recordNode = document.querySelector("#record");
+const partsNode = document.querySelector("#parts");
+const weaponNode = document.querySelector("#weapon");
+const modsNode = document.querySelector("#mods");
+const weaponsNode = document.querySelector("#weapons");
+const garageNode = document.querySelector("#garage");
 const overlay = document.querySelector("#overlay");
 const overlayTitle = document.querySelector("#overlay-title");
 const overlayText = document.querySelector("#overlay-text");
@@ -29,8 +51,26 @@ let keyFire = false;
 let pointerFire = false;
 let best = 0;
 let bestLoaded = false;
-let game = createGame();
-let hud = { score: 0, lives: 3, wave: 1, phase: "playing", reason: null };
+let loadout = normalizeLoadout(readLoadout());
+let game = createGame(Math.random, loadout);
+let hud = { score: -1, lives: -1, wave: -1, phase: "menu", reason: null };
+let arsenalKey = "";
+
+function readLoadout() {
+  try {
+    return JSON.parse(localStorage.getItem("tanki-loadout") || "null");
+  } catch {
+    return null;
+  }
+}
+
+function saveLoadout() {
+  try {
+    localStorage.setItem("tanki-loadout", JSON.stringify(loadout));
+  } catch {
+    // Прокачка останется до перезагрузки страницы.
+  }
+}
 
 function applyScale() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -69,6 +109,7 @@ function publish() {
   waveNode.textContent = `Волна: ${hud.wave}`;
   livesNode.textContent = `Жизни: ${hud.lives}`;
   renderOverlay();
+  refreshArsenal();
 }
 
 function renderOverlay() {
@@ -84,7 +125,7 @@ function renderOverlay() {
     return;
   }
   overlayTitle.textContent = "Бой окончен";
-  overlayText.textContent = `${hud.reason === "base" ? "База уничтожена" : "Жизни закончились"}. Счёт: ${hud.score}`;
+  overlayText.textContent = `${hud.reason === "base" ? "База уничтожена" : "Жизни закончились"}. Счёт: ${hud.score}. Детали сохранены.`;
   overlayAction.textContent = "Ещё раз";
 }
 
@@ -96,9 +137,77 @@ function togglePause() {
 }
 
 function restart() {
-  game = createGame();
+  game = createGame(Math.random, loadout);
   hud = { score: -1, lives: -1, wave: -1, phase: "menu", reason: null };
   publish();
+}
+
+function acceptLoadout(next) {
+  if (!next) return;
+  const earned = Math.max(0, game.parts - loadout.parts);
+  loadout = earned > 0 ? { ...next, parts: next.parts + earned } : next;
+  saveLoadout();
+  syncLoadout(game, loadout);
+  arsenalKey = "";
+  refreshArsenal();
+  refreshWallet();
+  publish();
+}
+
+function refreshArsenal() {
+  const weaponName = WEAPONS[loadout.weapon]?.name ?? "Пушка";
+  const label = `Оружие: ${weaponName}`;
+  if (weaponNode.textContent !== label) weaponNode.textContent = label;
+  const key = JSON.stringify(loadout);
+  if (key === arsenalKey) return;
+  arsenalKey = key;
+  weaponsNode.replaceChildren();
+  garageNode.replaceChildren();
+
+  for (const id of WEAPON_ORDER) {
+    const weapon = WEAPONS[id];
+    const owned = loadout.unlocked.includes(id);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = loadout.weapon === id ? "active" : "";
+    button.disabled = !owned && loadout.parts < weapon.price;
+    button.textContent = owned ? weapon.name : `${weapon.name} · ${weapon.price}`;
+    button.addEventListener("click", () => {
+      if (owned) acceptLoadout(selectWeapon(loadout, id));
+      else acceptLoadout(buyWeapon(loadout, id));
+    });
+    weaponsNode.append(button);
+  }
+
+  for (const id of Object.keys(UPGRADES)) {
+    const spec = UPGRADES[id];
+    const level = loadout[id];
+    const button = document.createElement("button");
+    button.type = "button";
+    const maxed = level >= spec.max;
+    const price = maxed ? 0 : spec.cost(level);
+    button.disabled = maxed || loadout.parts < price;
+    button.textContent = maxed ? `${spec.name} ${level}/${spec.max}` : `${spec.name} ${level}/${spec.max} · ${price}`;
+    button.title = spec.blurb;
+    button.addEventListener("click", () => acceptLoadout(buyUpgrade(loadout, id)));
+    garageNode.append(button);
+  }
+}
+
+function refreshWallet() {
+  if (game.parts !== loadout.parts) {
+    loadout = { ...loadout, parts: game.parts };
+    saveLoadout();
+    arsenalKey = "";
+    refreshArsenal();
+  }
+  if (partsNode.textContent !== `Детали: ${game.parts}`) partsNode.textContent = `Детали: ${game.parts}`;
+  const mods = Object.entries(game.mods)
+    .filter(([, time]) => time > 0)
+    .map(([id, time]) => `${MODIFIERS[id].name} ${Math.ceil(time)}с`)
+    .join(" · ");
+  const text = mods || "Модификаторы выпадают с танков";
+  if (modsNode.textContent !== text) modsNode.textContent = text;
 }
 
 function rememberBest() {
@@ -151,6 +260,12 @@ window.addEventListener("keydown", (event) => {
     togglePause();
   }
   if (event.code === "Enter" && !event.repeat && game.phase === "gameover") restart();
+  const weaponIndex = Number(event.code.slice(5)) - 1;
+  if (event.code.startsWith("Digit") && WEAPON_ORDER[weaponIndex]) {
+    event.preventDefault();
+    const id = WEAPON_ORDER[weaponIndex];
+    if (loadout.unlocked.includes(id)) acceptLoadout(selectWeapon(loadout, id));
+  }
 });
 
 window.addEventListener("keyup", (event) => {
@@ -201,6 +316,7 @@ function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   rememberBest();
+  refreshWallet();
   if (game.phase === "playing") {
     let left = dt;
     while (left > 0) {
@@ -213,6 +329,8 @@ function loop(now) {
   publish();
   requestAnimationFrame(loop);
 }
+publish();
+refreshWallet();
 requestAnimationFrame(loop);
 
 function draw(ctx, current) {
@@ -235,14 +353,19 @@ function draw(ctx, current) {
     }
   }
 
-  for (const enemy of current.enemies) drawTank(ctx, enemy, "#d4534a", "#7d241f");
+  for (const pickup of current.pickups) drawPickup(ctx, pickup);
+  for (const enemy of current.enemies) {
+    drawTank(ctx, enemy, "#d4534a", "#7d241f");
+    if (enemy.maxHp > 1) drawHp(ctx, enemy);
+  }
   if (current.player.alive && (current.player.invuln <= 0 || Math.floor(current.player.invuln * 12) % 2 === 0)) {
     drawTank(ctx, current.player, "#c6ef63", "#3d6b18");
   }
 
   for (const bullet of current.bullets) {
-    ctx.fillStyle = bullet.owner === "player" ? "#ffe27a" : "#ffb089";
-    ctx.fillRect(bullet.x, bullet.y, 6, 6);
+    ctx.fillStyle = bulletColor(bullet);
+    const size = bullet.size ?? 6;
+    ctx.fillRect(bullet.x, bullet.y, size, size);
   }
 
   for (const fx of current.fx) {
@@ -259,6 +382,35 @@ function draw(ctx, current) {
     ctx.textAlign = "center";
     ctx.fillText(current.banner, FIELD_W / 2, 78);
   }
+}
+
+function bulletColor(bullet) {
+  if (bullet.owner === "enemy") return "#ffb089";
+  const weapon = game.loadout?.weapon;
+  if (weapon === "mg") return "#fff4c2";
+  if (weapon === "howitzer") return "#ff9a3c";
+  if (weapon === "shotgun") return "#f0d060";
+  if (weapon === "ricochet") return "#8fd4ff";
+  return "#ffe27a";
+}
+
+function drawPickup(ctx, pickup) {
+  const colors = { rapid: "#7CFF6B", pierce: "#8fd4ff", power: "#ff9a3c" };
+  ctx.fillStyle = colors[pickup.kind] ?? "#ffffff";
+  ctx.fillRect(pickup.x, pickup.y, pickup.w, pickup.h);
+  ctx.fillStyle = "#172214";
+  ctx.font = "700 11px ui-monospace, monospace";
+  ctx.textAlign = "center";
+  const mark = { rapid: "С", pierce: "Б", power: "У" }[pickup.kind] ?? "";
+  ctx.fillText(mark, pickup.x + pickup.w / 2, pickup.y + 12);
+}
+
+function drawHp(ctx, tank) {
+  const ratio = Math.max(0, tank.hp / tank.maxHp);
+  ctx.fillStyle = "#24180f";
+  ctx.fillRect(tank.x, tank.y - 5, tank.w, 3);
+  ctx.fillStyle = "#ff6b57";
+  ctx.fillRect(tank.x, tank.y - 5, tank.w * ratio, 3);
 }
 
 function drawBrick(ctx, x, y, damaged) {

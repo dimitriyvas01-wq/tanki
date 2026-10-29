@@ -8,10 +8,13 @@
     <h1>ТАНКИ</h1>
     <div class="hud">
         <span id="score" data-score="0">Счёт: 0</span>
+        <span id="parts">Детали: 0</span>
+        <span id="weapon">Оружие: Пушка</span>
         <span id="wave">Волна: 1</span>
         <span id="lives">Жизни: 3</span>
         <span id="record">Рекорд: 0</span>
     </div>
+    <p id="mods" class="mods">Модификаторы выпадают с танков</p>
 
     <div class="board">
         <canvas id="field" role="img" aria-label="Поле танкового боя"></canvas>
@@ -24,7 +27,16 @@
         </div>
     </div>
 
-    <p class="hint">Стрелки или WASD — движение, пробел — выстрел, P — пауза. Защитите базу внизу карты.</p>
+    <p class="hint">Стрелки или WASD — движение, пробел — выстрел, 1–5 — оружие, P — пауза. Подберите модификатор и защитите базу. Детали копятся на прокачку.</p>
+
+    <section class="panel">
+        <h2>Оружие</h2>
+        <div id="weapons" class="choice"></div>
+    </section>
+    <section class="panel">
+        <h2>Прокачка</h2>
+        <div id="garage" class="choice"></div>
+    </section>
 
     <div class="controls">
         <div class="pad">
