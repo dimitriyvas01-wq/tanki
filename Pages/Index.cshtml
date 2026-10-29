@@ -1,0 +1,43 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Танки";
+}
+
+<main class="page">
+    <h1>ТАНКИ</h1>
+    <div class="hud">
+        <span id="score" data-score="0">Счёт: 0</span>
+        <span id="wave">Волна: 1</span>
+        <span id="lives">Жизни: 3</span>
+        <span id="record">Рекорд: 0</span>
+    </div>
+
+    <div class="board">
+        <canvas id="field" role="img" aria-label="Поле танкового боя"></canvas>
+        <div id="overlay" class="overlay" hidden>
+            <div class="dialog">
+                <p id="overlay-title" class="dialog-title"></p>
+                <p id="overlay-text"></p>
+                <button id="overlay-action" type="button" class="primary"></button>
+            </div>
+        </div>
+    </div>
+
+    <p class="hint">Стрелки или WASD — движение, пробел — выстрел, P — пауза. Защитите базу внизу карты.</p>
+
+    <div class="controls">
+        <div class="pad">
+            <span></span>
+            <button type="button" data-dir="up">Вверх</button>
+            <span></span>
+            <button type="button" data-dir="left">Влево</button>
+            <button type="button" data-dir="down">Вниз</button>
+            <button type="button" data-dir="right">Вправо</button>
+        </div>
+        <div class="actions">
+            <button type="button" id="fire" class="wide">Огонь</button>
+            <button type="button" id="pause" class="wide ghost">Пауза</button>
+        </div>
+    </div>
+</main>

@@ -1,0 +1,148 @@
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #10160f;
+  color: #e7f0d4;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 48rem;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 1.25rem 1rem 2rem;
+}
+
+h1 {
+  margin: 0;
+  color: #d6ef9a;
+  font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+  font-size: 1.875rem;
+  letter-spacing: 0.28em;
+}
+
+.hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+  color: #c9d7b4;
+  font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+  font-size: 0.875rem;
+}
+
+.board {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #3d5234;
+  border-radius: 0.5rem;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #172216;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.overlay[hidden] {
+  display: none;
+}
+
+.dialog {
+  width: 100%;
+  max-width: 24rem;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+  background: #182214;
+  border: 1px solid rgba(214, 239, 154, 0.4);
+  border-radius: 0.75rem;
+}
+
+.dialog-title {
+  margin: 0;
+  color: #d6ef9a;
+  font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+  font-size: 1.5rem;
+}
+
+.dialog p {
+  margin: 0.5rem 0 0;
+  color: #c9d7b4;
+}
+
+.hint {
+  margin: 0;
+  color: #b7c7a4;
+  font-size: 0.875rem;
+}
+
+.controls {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  width: 10rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+button {
+  height: 3rem;
+  color: inherit;
+  font: inherit;
+  background: #1d2b18;
+  border: 1px solid #3d5234;
+  border-radius: 0.375rem;
+  touch-action: none;
+  user-select: none;
+}
+
+button.wide {
+  height: 3.5rem;
+  padding: 0 1.25rem;
+}
+
+button.ghost {
+  background: transparent;
+}
+
+button.primary {
+  margin-top: 1rem;
+  height: auto;
+  padding: 0.5rem 1.25rem;
+  color: #172214;
+  font-weight: 600;
+  background: #d6ef9a;
+  border: 0;
+}

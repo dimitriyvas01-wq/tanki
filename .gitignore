@@ -157,3 +157,10 @@ pages/_studio/
 *.tar.gz
 *.tar.xz
 
+# .NET
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
